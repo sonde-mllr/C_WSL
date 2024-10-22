@@ -111,9 +111,10 @@ void* hiloProductor(void* args){
         /* Inicio Región Crítica*/
         // Se "produce" (un 1). Se añade un 1 al buffer, además comprueba el valor que devuelve la función, en caso de ser -1
         // nos estaría indicando que el buffer está lleno y no imprimirá nada por pantalla
-        if(agregarABuffer(buffer,1)!=-1){
-            printf("Añadido un elemento al buffer en la posicion: %i\n",buffer->indiceUltimoElemento);
-            printf("Numero de elementos: %i \n: ",buffer->contadorElementos);
+        int numAleatorio = rand() % 10;
+        if(agregarABuffer(buffer,numAleatorio)!=-1){
+            printf("+ Añadido un elemento al buffer en la posicion: %i, Elemento: %i\n",buffer->indiceUltimoElemento,numAleatorio);
+            printf("* Numero de elementos: %i \n ",buffer->contadorElementos);
         }
         // desbloquea el semáforo
         pthread_mutex_unlock(&semaforo_bin);
@@ -137,7 +138,7 @@ void* hiloConsumidor(void* args){
         // alomejor esta linea y la anterior se pueden escribir mas compacto rollo if((int elemento = popPrimerElemento(buffer)) != -1)
         // pero tampoco me apetecia complicarme pq no sabía si se podía o no
         if(elemento!=-1){
-            printf("Retirado el elemento: %i, estaba en la posicion: %i\n",elemento,buffer->indicePrimerElemento-1);
+            printf("- Retirado el elemento: %i, estaba en la posicion: %i\n",elemento,buffer->indicePrimerElemento-1);
         }
         // desbloqua el buffer
         pthread_mutex_unlock(&semaforo_bin);
@@ -147,6 +148,14 @@ void* hiloConsumidor(void* args){
     
     return NULL;   
 }
+
+/* 
+    Se debería añadir:
+        - Un generador de elementos aleatorios entre un rango. Pe: Numeros del 1 al 3
+        - Una condicion en la cual si el productor ya terminó (llego al numero máximo de iteraciones)
+            y no quedan elementos en el buffer -> Que el consumidor termine la función. Esto sería muy
+            util si la diferencia de tiempo entre la que se produce un elemento y este es consumido, es muy alta
+*/
 
 int main(){
     // crea la variable tipo bufferMesa
@@ -162,24 +171,17 @@ int main(){
 
     // Crea los hulos estableciendo las funciones que van a ejecutar cada uno y ¿pasa como argumento el puntero que hace referencia al buffer?
     if(pthread_create(&hProd,NULL,hiloProductor,&bufferProductos)!=0){
-        printf("No se pudo crear el hilo productor\n");
+        printf("* No se pudo crear el hilo productor \n");
         return 1;
     }
     if(pthread_create(&hCons,NULL,hiloConsumidor,&bufferProductos)!=0){
-        printf("No se pudo crear el hilo consumidor\n");
+        printf("* No se pudo crear el hilo consumidor \n");
         return 1;
     }
     // Espera a que ambos acaben
     pthread_join(hProd,NULL);
     pthread_join(hCons,NULL);
-
+    printf("[[ Ejecución de hilos acabada ]]\n<");
     return 0;
 }
 
-/* 
-    Se debería añadir:
-        - Un generador de elementos aleatorios entre un rango. Pe: Numeros del 1 al 3
-        - Una condicion en la cual si el productor ya terminó (llego al numero máximo de iteraciones)
-            y no quedan elementos en el buffer -> Que el consumidor termine la función. Esto sería muy
-            util si la diferencia de tiempo entre la que se produce un elemento y este es consumido, es muy alta
-*/
